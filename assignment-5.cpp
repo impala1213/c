@@ -7,26 +7,26 @@ private:
     int im;
 
 public:
-    Complex(int r, int i) : real(r), im(i) {
-        cout << "Constructor " << real << " " << im << endl;
+    Complex(int r, int i, bool output = true) : real(r), im(i) {
+        if (output) {
+            cout << "Constructor " << real << " " << im << endl;
+        }
     }
 
-    // 복사 생성자
     Complex(const Complex& c) : real(c.real), im(c.im) {
         cout << "Copy" << endl;
     }
 
-    friend Complex operator+(const Complex& a, const Complex& b) {
-        //Complex temp(a.real + b.real, a.im + b.im);
-        cout << "+ " << a.real + b.real << " " << a.im+b.im << endl;
+    friend Complex operator+(const Complex& c1, const Complex& c2) {
+        Complex temp(c1.real + c2.real, c1.im + c2.im, false);
+        cout << "+ " << temp.real << " " << temp.im << endl;
+        return temp;
     }
 };
 
 int main() {
     int real1, im1, real2, im2;
-
-    cin >> real1 >> im1;
-    cin >> real2 >> im2;
+    cin >> real1 >> im1 >> real2 >> im2;
     Complex c1(real1, im1);
     Complex c2(real2, im2);
     Complex c0(c1);
