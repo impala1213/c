@@ -11,6 +11,7 @@ struct Student {
     float score;
     char dept[10];
 };
+
 const int BLOCK_SIZE = 4096;
 const int RECORD_SIZE = sizeof(Student);
 const int BLOCKING_FACTOR = BLOCK_SIZE / RECORD_SIZE;
@@ -24,7 +25,7 @@ bool insert(char* name, unsigned ID, float score, char* dept) {
     student.score = score;
     strncpy(student.dept, dept, 10);
 
-    // ÆÄÀÏÀÌ Á¸Àç¿©ºÎ Ã¼Å©ÇÏ±â
+    // íŒŒì¼ì´ ì¡´ì¬ì—¬ë¶€ ì²´í¬í•˜ê¸°
     ifstream nfile("student.dat", ios::binary);
     if (!nfile.is_open()) {
         ofstream outfile("student.dat", ios::out | ios::binary);
@@ -32,7 +33,7 @@ bool insert(char* name, unsigned ID, float score, char* dept) {
         nfile.open("student.dat", ios::binary);
     }
 
-    // Áßº¹ ID °Ë»ç
+    // ì¤‘ë³µ ID ê²€ì‚¬
     Student temp;
     fstream infile("student.dat", ios::in | ios::out | ios::binary);
     int blockcount = 1;
@@ -47,12 +48,11 @@ bool insert(char* name, unsigned ID, float score, char* dept) {
             blockcount += 1;
         }
     }
-    // empty search
+    // ë¹ˆê³µê°„ ì°¾ê¸°
     fstream checkfile("student.dat", ios::in | ios::out | ios::binary);
     blockcount = 1;
     while(checkfile.read((char*)&temp, RECORD_SIZE)) {
         if (temp.ID == -1) {
-            cout << "empty loc :" << checkfile.tellg() << endl;
             checkfile.seekp(checkfile.tellg() - RECORD_SIZE);
             checkfile.write((char*)&student, RECORD_SIZE);
             checkfile.close();
@@ -66,7 +66,7 @@ bool insert(char* name, unsigned ID, float score, char* dept) {
 
     infile.close();
     fstream file("student.dat", ios::in | ios::out | ios::binary | ios::ate);
-    // blocking factor ÀÌÇÏÀÎÁö Ã¼Å© ÃÊ°ú½Ã »õ ºí·Ï ÇÒ´ç
+    // blocking factor ì´í•˜ì¸ì§€ ì²´í¬ ì´ˆê³¼ì‹œ ìƒˆ ë¸”ë¡ í• ë‹¹
     long currentSize = file.tellg();
     int currentRecords = currentSize / RECORD_SIZE;
     int currentBlock = currentRecords / BLOCKING_FACTOR;
@@ -78,7 +78,6 @@ bool insert(char* name, unsigned ID, float score, char* dept) {
         file.seekp(0, ios::end);
     }
     file.write((char*)&student, RECORD_SIZE);
-    cout << currentSize <<  " ID : " <<student.ID << endl;
     file.close();
     return true;
 }
@@ -130,17 +129,16 @@ bool drop(char* name, unsigned ID, float *score, char* dept) {
     fstream file("student.dat", ios::in | ios::out | ios::binary);
     Student student;
     int blockcount = 1;
+    int found = 0;
     while(file.read((char*)&student, RECORD_SIZE)) {
         long currentSize = file.tellg();
         int currentRecords = currentSize / RECORD_SIZE;
         int currentBlock = currentRecords / BLOCKING_FACTOR;
-            cout << file.tellg();
-            cout << " ID :" << student.ID << endl;
         if (student.ID == ID) {
             file.seekp(-40, ios::cur);
-            cout << "drop : " << file.tellg() <<endl;
             student.ID = -1;
             file.write((char*)&student, RECORD_SIZE);
+            found = 1;
             break;
         }
         if (currentSize / RECORD_SIZE == BLOCKING_FACTOR - 1) {
@@ -149,46 +147,17 @@ bool drop(char* name, unsigned ID, float *score, char* dept) {
         }
     }
     file.close();
-    return true;
+    if (found == 1){
+        return true;
+    }
+    else{
+        return false;
+    }
 }
 
 
 
 int main() {
-
-    // ·¹ÄÚµå Ãß°¡ Å×½ºÆ®
-    for (int i = 1; i <= 204; ++i) { // ÃæºĞÇÑ ¼öÀÇ ·¹ÄÚµå¸¦ Ãß°¡ÇÏ¿© ¿©·¯ ºí·ÏÀ» Ã¤¿ò
-        char name[20], dept[10];
-        sprintf(name, "Student%d", i);
-        sprintf(dept, "Dept%d", i % 10);
-        float score = 60.0 + (i % 40); // Á¡¼ö´Â 60¿¡¼­ 99 »çÀÌ·Î ¼³Á¤
-        unsigned ID = i; // ID´Â ¼øÂ÷ÀûÀ¸·Î Áõ°¡
-
-        if (insert(name, ID, score, dept)) {
-            cout << "Insertion successful for ID " << ID << endl;
-        } else {
-            cout << "Insertion failed for ID " << ID << endl;
-        }
-    }
-    for (int n = 90; n <= 104; ++n) { // ÃæºĞÇÑ ¼öÀÇ ·¹ÄÚµå¸¦ Ãß°¡ÇÏ¿© ¿©·¯ ºí·ÏÀ» Ã¤¿ò
-
-        if (drop( "", n, 0,"" )) {
-            cout << "drop successful for ID " << n << endl;
-        } else {
-            cout << "drop failed for ID " << endl;
-        }
-    }
-    for (int m =90; m<=104; ++m){
-        char name[20], dept[10];
-        sprintf(name, "Student%d", m+100);
-        sprintf(dept, "Dept%d", m % 10);
-        float score = 60.0 + (m % 40); // Á¡¼ö´Â 60¿¡¼­ 99 »çÀÌ·Î ¼³Á¤
-        unsigned ID = m; // ID´Â ¼øÂ÷ÀûÀ¸·Î Áõ°¡
-        insert(name, ID, score, dept);
-
-
-    }
-
 
     return 0;
 }
