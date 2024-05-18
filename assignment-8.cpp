@@ -37,14 +37,17 @@ public:
         Geom(CIRCLE), center(x, y), radius(r) {}
     Circle() {}
     bool overlap(Geom* other);
+    float getCenterX() const { return center.getA(); }
+    float getCenterY() const { return center.getB(); }
+    float getRadius() const { return radius; }
     void print(ostream& out) const {
-        out << "Circle: (" << center.getA() << ", " << center.getB() << "), r=" << radius;
+        out << "Circle: (" << getCenterX() << ", " << getCenterY() << "), r=" << getRadius();
     }
 };
 
 class Rectangle: public Geom {
-    Point p1; // bottom left corner point
-    Point p2; // top right corner point
+    Point p1;
+    Point p2;
 public:
     Rectangle(float x1, float y1, float x2, float y2):
         Geom(RECT), p1(x1, y1), p2(x2, y2) {}
@@ -58,8 +61,8 @@ public:
 };
 
 class Square: public Geom {
-    Point p;    // bottom left corner point
-    float side; // side length
+    Point p;
+    float side;
 public:
     Square(float x, float y, float s): Geom(SQUARE), p(x, y), side(s) {}
     Square() {}
@@ -71,12 +74,10 @@ public:
     }
 };
 
-// Helper function to check if two rectangles overlap
 bool rectOverlap(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
     return !(x1 > x4 || x3 > x2 || y1 > y4 || y3 > y2);
 }
 
-// Overlap methods for each class
 bool Circle::overlap(Geom* other) {
     if (other->getType() == CIRCLE) {
         Circle* c = dynamic_cast<Circle*>(other);
@@ -117,10 +118,17 @@ bool Square::overlap(Geom* other) {
         if (r == nullptr) return false;
         return rectOverlap(p.getA(), p.getB(), p.getA() + side, p.getB() + side, r->getP1().getA(), r->getP1().getB(), r->getP2().getA(), r->getP2().getB());
     } else if (other->getType() == CIRCLE) {
-        return other->overlap(this);
+        Circle* c = dynamic_cast<Circle*>(other);
+        if (c == nullptr) return false;
+        float closestX = c->getCenterX() < p.getA() ? p.getA() : (c->getCenterX() > p.getA() + side ? p.getA() + side : c->getCenterX());
+        float closestY = c->getCenterY() < p.getB() ? p.getB() : (c->getCenterY() > p.getB() + side ? p.getB() + side : c->getCenterY());
+        float distX = c->getCenterX() - closestX;
+        float distY = c->getCenterY() - closestY;
+        return (distX * distX + distY * distY) <= (c->getRadius() * c->getRadius());
     }
     return false;
 }
+
 
 int main() {
     int numGeom;
@@ -172,7 +180,6 @@ int main() {
 
     cout << result << endl;
 
-    // Clean up
     delete queryGeom;
     for (int i=0; i < numGeom; i++){
         delete geoms[i];
