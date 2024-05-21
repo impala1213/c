@@ -13,8 +13,8 @@ public:
     Geom() {}
     virtual bool overlap(Geom* other) = 0;
     virtual void print(ostream& out) const = 0;
-    friend ostream& operator<<(ostream& out, const Geom& geom) {
-        geom.print(out);
+    friend ostream& operator<<(ostream& out, const Geom* geom) {
+        geom->print(out);
         return out;
     }
     int getType() const { return type; }
@@ -24,7 +24,8 @@ class Point {
     float a, b;
 public:
     Point(float x, float y): a(x), b(y) {}
-    Point() : a(0), b(0) {}
+    Point() {}
+    float   overlap() { return 0.0; }
     float getA() const { return a; }
     float getB() const { return b; }
 };
@@ -41,7 +42,7 @@ public:
     float getCenterY() const { return center.getB(); }
     float getRadius() const { return radius; }
     void print(ostream& out) const {
-        out << "Circle: (" << getCenterX() << ", " << getCenterY() << "), r=" << getRadius();
+        out << "C: " << getCenterX() << ", " << getCenterY() << ", r = " << getRadius();
     }
 };
 
@@ -56,7 +57,7 @@ public:
     Point getP1() const { return p1; }
     Point getP2() const { return p2; }
     void print(ostream& out) const {
-        out << "Rectangle: [(" << p1.getA() << ", " << p1.getB() << "), (" << p2.getA() << ", " << p2.getB() << ")]";
+        out << "R: " << p1.getA() << ", " << p1.getB() << ", " << p2.getA() << ", " << p2.getB();
     }
 };
 
@@ -70,7 +71,7 @@ public:
     Point getP() const { return p; }
     float getSide() const { return side; }
     void print(ostream& out) const {
-        out << "Square: [(" << p.getA() << ", " << p.getB() << "), side=" << side << "]";
+        out << "S: " << p.getA() << ", " << p.getB() << ", side = " << side;
     }
 };
 
@@ -82,7 +83,7 @@ bool Circle::overlap(Geom* other) {
     if (other->getType() == CIRCLE) {
         Circle* c = dynamic_cast<Circle*>(other);
         if (c == nullptr) return false;
-        float dist = std::sqrt((center.getA() - c->center.getA()) * (center.getA() - c->center.getA()) +
+        float dist = sqrt((center.getA() - c->center.getA()) * (center.getA() - c->center.getA()) +
                                (center.getB() - c->center.getB()) * (center.getB() - c->center.getB()));
         return dist <= (radius + c->radius);
     } else if (other->getType() == RECT || other->getType() == SQUARE) {
@@ -133,6 +134,7 @@ bool Square::overlap(Geom* other) {
 int main() {
     int numGeom;
     cin >> numGeom;
+    Geom* geom;
     Geom* geoms[numGeom];
 
     for(int i = 0; i < numGeom; i++) {
@@ -155,24 +157,23 @@ int main() {
 
     char qType;
     cin >> qType;
-    Geom* queryGeom;
     if (qType == 'R') {
         float x1, y1, x2, y2;
         cin >> x1 >> y1 >> x2 >> y2;
-        queryGeom = new Rectangle(x1, y1, x2, y2);
+        geom = new Rectangle(x1, y1, x2, y2);
     } else if (qType == 'S') {
         float x, y, s;
         cin >> x >> y >> s;
-        queryGeom = new Square(x, y, s);
+        geom = new Square(x, y, s);
     } else if (qType == 'C') {
         float x, y, r;
         cin >> x >> y >> r;
-        queryGeom = new Circle(x, y, r);
+        geom = new Circle(x, y, r);
     }
 
     int result = -1;
     for(int i = 0; i < numGeom; i++) {
-        if(queryGeom->overlap(geoms[i])) {
+        if(geom->overlap(geoms[i])) {
             result = i + 1;
             break;
         }
@@ -180,7 +181,7 @@ int main() {
 
     cout << result << endl;
 
-    delete queryGeom;
+    delete geom;
     for (int i=0; i < numGeom; i++){
         delete geoms[i];
     }
