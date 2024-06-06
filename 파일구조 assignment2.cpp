@@ -12,152 +12,210 @@ struct Student {
     char dept[10];
 };
 
-const int BLOCK_SIZE = 4096;
-const int RECORD_SIZE = sizeof(Student);
-const int BLOCKING_FACTOR = BLOCK_SIZE / RECORD_SIZE;
+bool insert(char* name, unsigned* ID, float* score, char* dept);
+bool read(int n, char* name, unsigned* ID, float* score, char* dept);
+bool search(char* name, unsigned ID, float* score, char* dept);
+bool drop(char* name, unsigned ID, float* score, char* dept);
 
+class LIKStudent {
+public:
+    string      name;
+    unsigned    ID;
+    float       score;
+    string      dept;
+};
 
+int main()
+{
+    ifstream    ifs("file.txt", ios::in);
+    unsigned    ID;
+    string      name;
+    float       score;
+    string      dept;
+    char        cname[21];
+    char        cdept[11];
+    LIKStudent  stud[10000];
 
-bool insert(char* name, unsigned ID, float score, char* dept) {
-    Student student;
-    strncpy(student.name, name, 20);
-    student.ID = ID;
-    student.score = score;
-    strncpy(student.dept, dept, 10);
-
-    // 파일이 존재여부 체크하기
-    ifstream nfile("student.dat", ios::binary);
-    if (!nfile.is_open()) {
-        ofstream outfile("student.dat", ios::out | ios::binary);
-        outfile.close();
-        nfile.open("student.dat", ios::binary);
+    system("del student.dat");
+    for(int i=0;i<10000;i++) {
+        ifs>>ID>>name>>score>>dept;
+        stud[i].ID=ID; stud[i].name=name; stud[i].dept=dept; stud[i].score=score;
     }
 
-    // 중복 ID 검사
-    Student temp;
-    fstream infile("student.dat", ios::in | ios::out | ios::binary);
-    int blockcount = 1;
-    while(infile.read((char*)&temp, RECORD_SIZE)) {
-        if (temp.ID == ID) {
-            //cout << "same id!" << endl;
-            infile.close();
+
+    for(int i=0;i<10000;i++) {
+        strcpy(cname,stud[i].name.c_str());
+        strcpy(cdept,stud[i].dept.c_str());
+        if(insert(cname,&stud[i].ID,&stud[i].score,cdept)!=true) cout<<"In Insert "<<i<<": Error\n";
+
+    }
+
+    ifs.close();
+
+    cout<<"\nread Test ---------------\n";
+    for(int i=0;i<10000;i++) {
+        if(i%1000==0) {
+            read(i,cname,&ID,&score,cdept);
+            cout<<stud[i].name<<" "<<stud[i].ID<<" "<<stud[i].score<<" "<<stud[i].dept<<endl;
+            cout<<cname<<" "<<ID<<" "<<score<<" "<<cdept<<endl;
+        }
+    }
+
+    cout<<"\nsearch Test ---------------\n";
+    for(int i=0;i<10000;i++) {
+        if(i%1000==0) {
+            if(search(cname,stud[i].ID,&score,cdept)!=true) cout<<"In Search "<<i<<": Error\n";
+            cout<<stud[i].name<<" "<<stud[i].ID<<" "<<stud[i].score<<" "<<stud[i].dept<<endl;
+            cout<<cname<<" "<<stud[i].ID<<" "<<score<<" "<<cdept<<endl;
+        }
+    }
+
+    cout<<"\ndrop Test ---------------\n";
+
+    for(int i=0;i<10000;i++) {
+        if(i%10==0) {
+            strcpy(cname,stud[i].name.c_str());
+            strcpy(cdept,stud[i].dept.c_str());
+            drop(cname,stud[i].ID,&stud[i].score,cdept);
+
+        }
+    }
+
+    for(int i=0;i<10000;i++) {
+        if(i%1000==0) {
+            if(search(cname,stud[i].ID,&score,cdept)!=true) cout<<i<<": Error\n";
+            else cout<<i<<": "<<cname<<" "<<ID<<" "<<score<<" "<<cdept<<endl;
+        }
+    }
+
+    cout<<"\n2nd search Test ---------------\n";
+
+    for(int i=0;i<10000;i++) {
+        if(i%10==0) {
+            strcpy(cname,stud[i].name.c_str());
+            strcpy(cdept,stud[i].dept.c_str());
+            if(insert(cname,&stud[i].ID,&stud[i].score,cdept)!=true) cout<<"In Insert "<<i<<": Error\n";
+
+        }
+
+    }
+
+    for(int i=0;i<10000;i++) {
+        if(i%1000==0) {
+            if(search(cname,stud[i].ID,&score,cdept)!=true) cout<<"In Search "<<i<<": Error\n";
+            else {
+                cout<<stud[i].name<<" "<<stud[i].ID<<" "<<stud[i].score<<" "<<stud[i].dept<<endl;
+                cout<<cname<<" "<<stud[i].ID<<" "<<score<<" "<<cdept<<endl;
+            }
+        }
+    }
+
+    cout<<"\nfile size Test ---------------\n";
+
+    return 0;
+
+}
+
+bool insert(char* name, unsigned* ID, float* score, char* dept) {
+    fstream file("student.dat", ios::in | ios::out | ios::binary | ios::app);
+    if (!file) {
+        file.open("student.dat", ios::out | ios::binary);
+        file.close();
+        file.open("student.dat", ios::in | ios::out | ios::binary | ios::app);
+    }
+
+    // Check for duplicate ID
+    Student stud;
+    file.seekg(0, ios::beg);
+    while (file.read(reinterpret_cast<char*>(&stud), sizeof(Student))) {
+        if (stud.ID == *ID) {
+            file.close();
             return false;
         }
-        if (infile.tellg() / RECORD_SIZE == BLOCKING_FACTOR - 1) {
-            infile.seekp(blockcount * BLOCK_SIZE - (RECORD_SIZE - 1), ios::beg);
-            blockcount += 1;
-        }
-    }
-    // 빈공간 찾기
-    fstream checkfile("student.dat", ios::in | ios::out | ios::binary);
-    blockcount = 1;
-    while(checkfile.read((char*)&temp, RECORD_SIZE)) {
-        if (temp.ID == -1) {
-            checkfile.seekp(checkfile.tellg() - RECORD_SIZE);
-            checkfile.write((char*)&student, RECORD_SIZE);
-            checkfile.close();
-            return true;
-        }
-        if (checkfile.tellg() / RECORD_SIZE == BLOCKING_FACTOR - 1) {
-            checkfile.seekp(blockcount * BLOCK_SIZE - (RECORD_SIZE - 1), ios::beg);
-            blockcount += 1;
-        }
     }
 
-    infile.close();
-    fstream file("student.dat", ios::in | ios::out | ios::binary | ios::ate);
-    // blocking factor 이하인지 체크 초과시 새 블록 할당
-    long currentSize = file.tellg();
-    int currentRecords = currentSize / RECORD_SIZE;
-    int currentBlock = currentRecords / BLOCKING_FACTOR;
-    blockcount = 1;
-    if (currentSize / RECORD_SIZE == BLOCKING_FACTOR - 1 ) {
-        file.seekp(blockcount * BLOCK_SIZE - (RECORD_SIZE - 1), ios::beg);
-        blockcount += 1;
-    } else {
-        file.seekp(0, ios::end);
-    }
-    file.write((char*)&student, RECORD_SIZE);
+    // Insert new record
+    strncpy(stud.name, name, sizeof(stud.name) - 1);
+    stud.name[sizeof(stud.name) - 1] = '\0';
+    stud.ID = *ID;
+    stud.score = *score;
+    strncpy(stud.dept, dept, sizeof(stud.dept) - 1);
+    stud.dept[sizeof(stud.dept) - 1] = '\0';
+
+    file.clear();
+    file.write(reinterpret_cast<char*>(&stud), sizeof(Student));
     file.close();
     return true;
 }
 
-
 bool read(int n, char* name, unsigned* ID, float* score, char* dept) {
-    ifstream file("student.dat", ios::binary);
-    if(n > BLOCKING_FACTOR){
-        file.seekg(BLOCK_SIZE *(n/BLOCKING_FACTOR) + RECORD_SIZE*(n%BLOCKING_FACTOR) + 1 ,ios::beg);
-    }
-    else{
-        file.seekg(n * RECORD_SIZE, ios::beg);
-    }
-    Student student;
-    if (!file.read((char*)&student, sizeof(Student))) {
-            return false;
-        }
-    strcpy(name, student.name);
-    *ID = student.ID;
-    *score = student.score;
-    strcpy(dept, student.dept);
-    return true;
-}
+    fstream file("student.dat", ios::in | ios::binary);
+    if (!file) return false;
 
-bool search(char* name, unsigned ID, float* score, char* dept) {
-    ifstream file("student.dat", ios::binary);
-
-    Student student;
-    int blockcount = 1;
-    while(file.read((char*)&student, RECORD_SIZE)) {
-        long currentSize = file.tellg();
-        int currentRecords = file.tellg() / RECORD_SIZE;
-        int currentBlock = file.tellg() / RECORD_SIZE / BLOCKING_FACTOR;
-        if (student.ID == ID) {
-            strcpy(name, student.name);
-            *score = student.score;
-            strcpy(dept, student.dept);
-            return true;
-        }
-        if (file.tellg() / RECORD_SIZE == BLOCKING_FACTOR - 1) {
-            file.seekg(blockcount * BLOCK_SIZE - (RECORD_SIZE - 1), ios::beg);
-            blockcount += 1;
-        }
+    file.seekg(n * sizeof(Student), ios::beg);
+    Student stud;
+    if (file.read(reinterpret_cast<char*>(&stud), sizeof(Student))) {
+        strncpy(name, stud.name, sizeof(stud.name));
+        *ID = stud.ID;
+        *score = stud.score;
+        strncpy(dept, stud.dept, sizeof(stud.dept));
+        file.close();
+        return true;
     }
+    file.close();
     return false;
 }
 
-bool drop(char* name, unsigned ID, float *score, char* dept) {
-    fstream file("student.dat", ios::in | ios::out | ios::binary);
-    Student student;
-    int blockcount = 1;
-    int found = 0;
-    while(file.read((char*)&student, RECORD_SIZE)) {
-        long currentSize = file.tellg();
-        int currentRecords = currentSize / RECORD_SIZE;
-        int currentBlock = currentRecords / BLOCKING_FACTOR;
-        if (student.ID == ID) {
-            file.seekp(-40, ios::cur);
-            student.ID = -1;
-            file.write((char*)&student, RECORD_SIZE);
-            found = 1;
-            break;
-        }
-        if (currentSize / RECORD_SIZE == BLOCKING_FACTOR - 1) {
-            file.seekp(blockcount * BLOCK_SIZE - (RECORD_SIZE - 1), ios::beg);
-            blockcount += 1;
+bool search(char* name, unsigned ID, float* score, char* dept) {
+    fstream file("student.dat", ios::in | ios::binary);
+    if (!file) return false;
+
+    Student stud;
+    file.seekg(0, ios::beg);
+    while (file.read(reinterpret_cast<char*>(&stud), sizeof(Student))) {
+        if (stud.ID == ID) {
+            strncpy(name, stud.name, sizeof(stud.name));
+            *score = stud.score;
+            strncpy(dept, stud.dept, sizeof(stud.dept));
+            file.close();
+            return true;
         }
     }
     file.close();
-    if (found == 1){
-        return true;
-    }
-    else{
-        return false;
-    }
+    return false;
 }
 
+bool drop(char* name, unsigned ID, float* score, char* dept) {
+    fstream file("student.dat", ios::in | ios::out | ios::binary);
+    if (!file) return false;
 
+    vector<Student> students;
+    Student stud;
+    bool found = false;
 
-int main() {
+    // Read all records into memory except the one to be deleted
+    while (file.read(reinterpret_cast<char*>(&stud), sizeof(Student))) {
+        if (stud.ID != ID) {
+            students.push_back(stud);
+        } else {
+            strncpy(name, stud.name, sizeof(stud.name));
+            *score = stud.score;
+            strncpy(dept, stud.dept, sizeof(stud.dept));
+            found = true;
+        }
+    }
 
-    return 0;
+    if (!found) {
+        file.close();
+        return false;
+    }
+
+    // Rewrite the file without the deleted record
+    file.close();
+    file.open("student.dat", ios::out | ios::binary | ios::trunc);
+    for (const auto& s : students) {
+        file.write(reinterpret_cast<const char*>(&s), sizeof(Student));
+    }
+    file.close();
+    return true;
 }
