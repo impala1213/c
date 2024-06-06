@@ -1,91 +1,112 @@
-#include <iostream>
 #include <queue>
 #include <vector>
+#include <iostream>
 #include <cmath>
-
 #define PI 3.14
 
 using namespace std;
 
-enum ShapeType { POINT, CIRCLE, RECTANGLE, SQUARE };
-
 class Geometry {
-    int type;
 public:
-    Geometry(int t) : type(t) {}
-    virtual ~Geometry() {}
+    int index;
     virtual float area() const = 0;
-    friend bool operator==(const Geometry& a, const Geometry& b) { return a.area() == b.area(); }
-    friend bool operator<(const Geometry& a, const Geometry& b) { return a.area() < b.area(); }
-    friend bool operator>(const Geometry& a, const Geometry& b) { return !(a < b) && !(a == b); }
+    virtual ~Geometry() {}
 };
 
-class Point : public Geometry {
+class Point: public Geometry {
     float a, b;
 public:
-    Point(float x, float y) : Geometry(POINT), a(x), b(y) {}
-    Point() : Geometry(POINT), a(0), b(0) {}
-    float area() const override { return 0.0; }
+    Point(float x, float y) : a(x), b(y) {}
+    Point() {}
+    float area() const { return 0.0; }
     float getX() const { return a; }
     float getY() const { return b; }
 };
 
-class Circle : public Geometry {
+class Circle: public Geometry {
     Point center;
     float radius;
 public:
-    Circle(float x, float y, float r) : Geometry(CIRCLE), center(x, y), radius(r) {}
-    float area() const override { return PI * radius * radius; }
+    Circle(float x, float y, float r) : center(x, y), radius(r) {}
+    float area() const { return PI * radius * radius; }
 };
 
-class Rectangle : public Geometry {
-    Point p1, p2;
+class Rectangle: public Geometry {
+    Point p1;
+    Point p2;
 public:
-    Rectangle(float x1, float y1, float x2, float y2) : Geometry(RECTANGLE), p1(x1, y1), p2(x2, y2) {}
-    float area() const override {
-        return abs(p2.getX() - p1.getX()) * abs(p2.getY() - p1.getY());
-    }
+    Rectangle(float x1, float y1, float x2, float y2) : p1(x1, y1), p2(x2, y2) {}
+    float area() const { return std::abs(p2.getX() - p1.getX()) * std::abs(p2.getY() - p1.getY()); }
 };
 
-class Square : public Geometry {
+class Square: public Geometry {
     Point p;
     float side;
 public:
-    Square(float x, float y, float s) : Geometry(SQUARE), p(x, y), side(s) {}
-    float area() const override { return side * side; }
+    Square(float x, float y, float s) : p(x, y), side(s) {}
+    float area() const { return side * side; }
 };
 
-int main() {
-    priority_queue<pair<float, int>> geoms;
-
-    string shape;
-    int index = 0;
-    while (cin >> shape) {
-        if (shape == "x"){
-            break;
+void bubbleSort(vector<Geometry*>& vec) {
+    bool swapped;
+    int n = vec.size();
+    do {
+        swapped = false;
+        for (int i = 1; i < n; ++i) {
+            if (vec[i - 1]->area() < vec[i]->area()) {
+                swap(vec[i - 1], vec[i]);
+                swapped = true;
+            }
         }
-        if (shape == "R") {
+        --n;
+    } while (swapped);
+}
+
+int main() {
+    priority_queue<Geometry*> geoms;
+    vector<Geometry*> geomVector;
+    vector<int> indices;
+    string type;
+    int index = 0;
+
+    while (cin >> type) {
+        Geometry* geom = nullptr;
+        if (type == "R") {
             float x1, y1, x2, y2;
             cin >> x1 >> y1 >> x2 >> y2;
-            Rectangle r(x1, y1, x2, y2);
-            geoms.push({r.area(), index});
-        } else if (shape == "C") {
+            geom = new Rectangle(x1, y1, x2, y2);
+        } else if (type == "S") {
+            float x, y, s;
+            cin >> x >> y >> s;
+            geom = new Square(x, y, s);
+        } else if (type == "C") {
             float x, y, r;
             cin >> x >> y >> r;
-            Circle c(x, y, r);
-            geoms.push({c.area(), index});
-        } else if (shape == "S") {
-            float x, y, side;
-            cin >> x >> y >> side;
-            Square sq(x, y, side);
-            geoms.push({sq.area(), index});
-}
-        index++;
+            geom = new Circle(x, y, r);
+        }
+        if (geom != nullptr) {
+            geom->index = index++;
+            geoms.push(geom);
+        }
     }
 
     while (!geoms.empty()) {
-        cout << geoms.top().second << endl;
+        geomVector.push_back(geoms.top());
         geoms.pop();
+    }
+
+    bubbleSort(geomVector);
+
+    for (auto i = geomVector.begin(); i != geomVector.end(); i++) {
+        indices.push_back((*i)->index);
+    }
+
+    for (auto i = indices.begin(); i != indices.end(); i++) {
+        cout << *i << endl;
+    }
+
+    for (auto i = geomVector.begin(); i != geomVector.end(); i++) {
+        delete *i;
     }
 
     return 0;
