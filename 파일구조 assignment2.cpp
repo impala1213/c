@@ -17,105 +17,6 @@ bool read(int n, char* name, unsigned* ID, float* score, char* dept);
 bool search(char* name, unsigned ID, float* score, char* dept);
 bool drop(char* name, unsigned ID, float* score, char* dept);
 
-class LIKStudent {
-public:
-    string      name;
-    unsigned    ID;
-    float       score;
-    string      dept;
-};
-
-int main()
-{
-    ifstream    ifs("file.txt", ios::in);
-    unsigned    ID;
-    string      name;
-    float       score;
-    string      dept;
-    char        cname[21];
-    char        cdept[11];
-    LIKStudent  stud[10000];
-
-    system("del student.dat");
-    for(int i=0;i<10000;i++) {
-        ifs>>ID>>name>>score>>dept;
-        stud[i].ID=ID; stud[i].name=name; stud[i].dept=dept; stud[i].score=score;
-    }
-
-
-    for(int i=0;i<10000;i++) {
-        strcpy(cname,stud[i].name.c_str());
-        strcpy(cdept,stud[i].dept.c_str());
-        if(insert(cname,&stud[i].ID,&stud[i].score,cdept)!=true) cout<<"In Insert "<<i<<": Error\n";
-
-    }
-
-    ifs.close();
-
-    cout<<"\nread Test ---------------\n";
-    for(int i=0;i<10000;i++) {
-        if(i%1000==0) {
-            read(i,cname,&ID,&score,cdept);
-            cout<<stud[i].name<<" "<<stud[i].ID<<" "<<stud[i].score<<" "<<stud[i].dept<<endl;
-            cout<<cname<<" "<<ID<<" "<<score<<" "<<cdept<<endl;
-        }
-    }
-
-    cout<<"\nsearch Test ---------------\n";
-    for(int i=0;i<10000;i++) {
-        if(i%1000==0) {
-            if(search(cname,stud[i].ID,&score,cdept)!=true) cout<<"In Search "<<i<<": Error\n";
-            cout<<stud[i].name<<" "<<stud[i].ID<<" "<<stud[i].score<<" "<<stud[i].dept<<endl;
-            cout<<cname<<" "<<stud[i].ID<<" "<<score<<" "<<cdept<<endl;
-        }
-    }
-
-    cout<<"\ndrop Test ---------------\n";
-
-    for(int i=0;i<10000;i++) {
-        if(i%10==0) {
-            strcpy(cname,stud[i].name.c_str());
-            strcpy(cdept,stud[i].dept.c_str());
-            drop(cname,stud[i].ID,&stud[i].score,cdept);
-
-        }
-    }
-
-    for(int i=0;i<10000;i++) {
-        if(i%1000==0) {
-            if(search(cname,stud[i].ID,&score,cdept)!=true) cout<<i<<": Error\n";
-            else cout<<i<<": "<<cname<<" "<<ID<<" "<<score<<" "<<cdept<<endl;
-        }
-    }
-
-    cout<<"\n2nd search Test ---------------\n";
-
-    for(int i=0;i<10000;i++) {
-        if(i%10==0) {
-            strcpy(cname,stud[i].name.c_str());
-            strcpy(cdept,stud[i].dept.c_str());
-            if(insert(cname,&stud[i].ID,&stud[i].score,cdept)!=true) cout<<"In Insert "<<i<<": Error\n";
-
-        }
-
-    }
-
-    for(int i=0;i<10000;i++) {
-        if(i%1000==0) {
-            if(search(cname,stud[i].ID,&score,cdept)!=true) cout<<"In Search "<<i<<": Error\n";
-            else {
-                cout<<stud[i].name<<" "<<stud[i].ID<<" "<<stud[i].score<<" "<<stud[i].dept<<endl;
-                cout<<cname<<" "<<stud[i].ID<<" "<<score<<" "<<cdept<<endl;
-            }
-        }
-    }
-
-    cout<<"\nfile size Test ---------------\n";
-
-    return 0;
-
-}
-
 bool insert(char* name, unsigned* ID, float* score, char* dept) {
     fstream file("student.dat", ios::in | ios::out | ios::binary | ios::app);
     if (!file) {
@@ -218,4 +119,10 @@ bool drop(char* name, unsigned ID, float* score, char* dept) {
     }
     file.close();
     return true;
+}
+
+int main()
+{
+
+
 }
